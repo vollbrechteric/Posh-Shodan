@@ -4,7 +4,7 @@ function Set-ShodanAPIKey
     [CmdletBinding()]
     Param
     (
-        # VirusToral API Key.
+        # Shodan.io API Key.
         [Parameter(Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             Position = 0)]
@@ -29,14 +29,14 @@ function Set-ShodanAPIKey
         $SecureKeyString = ConvertTo-SecureString -String $APIKey -AsPlainText -Force
         
         # Generate a random secure Salt
-        $SaltBytes = New-Object byte[] 32
-        $RNG = New-Object System.Security.Cryptography.RNGCryptoServiceProvider
+        $SaltBytes = New-Object -TypeName byte[] -ArgumentList 32
+        $RNG = New-Object -TypeName System.Security.Cryptography.RNGCryptoServiceProvider
         $RNG.GetBytes($SaltBytes)
 
-        $Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList 'user', $MasterPassword
+        $Credentials = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList 'user', $MasterPassword
 
         # Derive Key, IV and Salt from Key
-        $Rfc2898Deriver = New-Object System.Security.Cryptography.Rfc2898DeriveBytes -ArgumentList $Credentials.GetNetworkCredential().Password, $SaltBytes
+        $Rfc2898Deriver = New-Object -TypeName System.Security.Cryptography.Rfc2898DeriveBytes -ArgumentList $Credentials.GetNetworkCredential().Password, $SaltBytes
         $KeyBytes = $Rfc2898Deriver.GetBytes(32)
 
         $EncryptedString = $SecureKeyString | ConvertFrom-SecureString -key $KeyBytes
@@ -49,12 +49,12 @@ function Set-ShodanAPIKey
         {
             Write-Verbose -Message 'Seems this is the first time the config has been set.'
             Write-Verbose -Message "Creating folder $("$($env:AppData)\$FolderName")"
-            New-Item -ItemType directory -Path "$($env:AppData)\$FolderName" | Out-Null
+            $null = New-Item -ItemType directory -Path "$($env:AppData)\$FolderName"
         }
         
         Write-Verbose -Message "Saving the information to configuration file $("$($env:AppData)\$FolderName\$ConfigName")"
-        "$($EncryptedString)" | Set-Content  "$($env:AppData)\$FolderName\$ConfigName" -Force
-        Set-Content -Value $SaltBytes -Encoding Byte -Path "$($env:AppData)\$FolderName\$saltname" -Force
+        "$($EncryptedString)" | Set-Content  -Path "$($env:AppData)\$FolderName\$ConfigName" -Force
+        Set-Content -Value $SaltBytes -AsByteStream -Path "$($env:AppData)\$FolderName\$saltname" -Force
     }
     End
     {
@@ -80,7 +80,7 @@ function Read-ShodanAPIKey
         # Test if configuration file exists.
         if (!(Test-Path -Path "$($env:AppData)\Posh-Shodan\api.key"))
         {
-            throw 'Configuration has not been set, Set-ShodanAPIKey to configure the API Keys.'
+            throw 'Configuration has not been set. Use Set-ShodanAPIKey to configure the API Key.'
         }
     }
     Process
@@ -89,14 +89,14 @@ function Read-ShodanAPIKey
         $ConfigFileContent = Get-Content -Path "$($env:AppData)\Posh-Shodan\api.key"
         Write-Debug -Message "Secure string is $($ConfigFileContent)"
 
-        $SaltBytes = Get-Content -Encoding Byte -Path "$($env:AppData)\Posh-Shodan\salt.rnd" 
-        $Credentials = New-Object System.Management.Automation.PSCredential -ArgumentList 'user', $MasterPassword
+        $SaltBytes = Get-Content -AsByteStream -Raw -Path "$($env:AppData)\Posh-Shodan\salt.rnd" 
+        $Credentials = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList 'user', $MasterPassword
 
         # Derive Key, IV and Salt from Key
-        $Rfc2898Deriver = New-Object System.Security.Cryptography.Rfc2898DeriveBytes -ArgumentList $Credentials.GetNetworkCredential().Password, $SaltBytes
+        $Rfc2898Deriver = New-Object -TypeName System.Security.Cryptography.Rfc2898DeriveBytes -ArgumentList $Credentials.GetNetworkCredential().Password, $SaltBytes
         $KeyBytes = $Rfc2898Deriver.GetBytes(32)
 
-        $SecString = ConvertTo-SecureString -Key $KeyBytes $ConfigFileContent
+        $SecString = ConvertTo-SecureString -Key $KeyBytes -String $ConfigFileContent
 
         # Decrypt the secure string.
         $SecureStringToBSTR = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecString)
@@ -151,11 +151,11 @@ function Get-ShodanAPIInfo
 
     Begin
     {
-        if (!(Test-Path variable:Global:ShodanAPIKey ) -and !($APIKey))
+        if (!(Test-Path -Path variable:Global:ShodanAPIKey ) -and !($APIKey))
         {
             throw 'No Shodan API Key has been specified or set.'
         }
-        elseif ((Test-Path variable:Global:ShodanAPIKey ) -and !($APIKey))
+        elseif ((Test-Path -Path variable:Global:ShodanAPIKey ) -and !($APIKey))
         {
             $APIKey = $Global:ShodanAPIKey
         }
@@ -241,11 +241,11 @@ function Get-ShodanService
 
     Begin
     {
-        if (!(Test-Path variable:Global:ShodanAPIKey ) -and !($APIKey))
+        if (!(Test-Path -Path variable:Global:ShodanAPIKey ) -and !($APIKey))
         {
             throw 'No Shodan API Key has been specified or set.'
         }
-        elseif ((Test-Path variable:Global:ShodanAPIKey ) -and !($APIKey))
+        elseif ((Test-Path -Path variable:Global:ShodanAPIKey ) -and !($APIKey))
         {
             $APIKey = $Global:ShodanAPIKey
         }
@@ -346,11 +346,11 @@ function Get-ShodanHostService
 
     Begin
     {
-        if (!(Test-Path variable:Global:ShodanAPIKey ) -and !($APIKey))
+        if (!(Test-Path -Path variable:Global:ShodanAPIKey ) -and !($APIKey))
         {
             throw 'No Shodan API Key has been specified or set.'
         }
-        elseif ((Test-Path variable:Global:ShodanAPIKey ) -and !($APIKey))
+        elseif ((Test-Path -Path variable:Global:ShodanAPIKey ) -and !($APIKey))
         {
             $APIKey = $Global:ShodanAPIKey
         }
@@ -649,7 +649,7 @@ function Search-ShodanHost
 
     Begin
     {
-        if (!(Test-Path variable:Global:ShodanAPIKey ) -and !($APIKey))
+        if (!(Test-Path -Path variable:Global:ShodanAPIKey ) -and !($APIKey))
         {
             throw 'No Shodan API Key has been specified or set.'
         }
