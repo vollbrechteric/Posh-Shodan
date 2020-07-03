@@ -8,7 +8,7 @@ function Set-ShodanAPIKey
         [Parameter(Mandatory = $true,
             ValueFromPipelineByPropertyName = $true,
             Position = 0)]
-        [string]
+        [securestring]
         $APIKey,
 
         [Parameter(Mandatory = $true,
@@ -26,24 +26,25 @@ function Set-ShodanAPIKey
         Write-Verbose -Message "Setting the env variable `$Global:ShodanAPIKey with the key."
         $Global:ShodanAPIKey = $APIKey
 
-        $SecureKeyString = ConvertTo-SecureString -String $APIKey -AsPlainText -Force
+        Set-Secret -Name 'ShodanAPI' -Secret $APIKey -Vault 'BuiltInLocalVault'
+        #$SecureKeyString = ConvertTo-SecureString -String $APIKey -AsPlainText -Force
         
         # Generate a random secure Salt
-        $SaltBytes = New-Object -TypeName byte[] -ArgumentList 32
-        $RNG = New-Object -TypeName System.Security.Cryptography.RNGCryptoServiceProvider
-        $RNG.GetBytes($SaltBytes)
+        #$SaltBytes = New-Object -TypeName byte[] -ArgumentList 32
+        #$RNG = New-Object -TypeName System.Security.Cryptography.RNGCryptoServiceProvider
+        #$RNG.GetBytes($SaltBytes)
 
-        $Credentials = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList 'user', $MasterPassword
+        #$Credentials = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList 'user', $MasterPassword
 
         # Derive Key, IV and Salt from Key
-        $Rfc2898Deriver = New-Object -TypeName System.Security.Cryptography.Rfc2898DeriveBytes -ArgumentList $Credentials.GetNetworkCredential().Password, $SaltBytes
-        $KeyBytes = $Rfc2898Deriver.GetBytes(32)
+        #$Rfc2898Deriver = New-Object -TypeName System.Security.Cryptography.Rfc2898DeriveBytes -ArgumentList $Credentials.GetNetworkCredential().Password, $SaltBytes
+        #$KeyBytes = $Rfc2898Deriver.GetBytes(32)
 
-        $EncryptedString = $SecureKeyString | ConvertFrom-SecureString -key $KeyBytes
+        #$EncryptedString = $SecureKeyString | ConvertFrom-SecureString -key $KeyBytes
 
-        $FolderName = 'Posh-Shodan'
-        $ConfigName = 'api.key'
-        $saltname = 'salt.rnd'
+        #$FolderName = 'Posh-Shodan'
+        #$ConfigName = 'api.key'
+        #$saltname = 'salt.rnd'
         
         if (!(Test-Path -Path "$($env:AppData)\$FolderName"))
         {
